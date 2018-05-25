@@ -1,24 +1,9 @@
  
 #include <gst/gst.h>
 
-static gboolean link_elements_with_filter (GstElement *element1, GstElement *element2, GstCaps* caps)
-{
-  gboolean link_ok;
-
-  link_ok = gst_element_link_filtered (element1, element2, caps);
-  gst_caps_unref (caps);
-
-  if (!link_ok) {
-    g_warning ("Failed to link element1 and element2!");
-  }
-
-  return link_ok;
-}
-
-
 int main(int argc, char *argv[]) {
-  GstElement *pipeline, *source, *sink, *enc, *rtpjpgpay;
-  GstElement *cfilter;
+  GstElement *pipeline, *source, *sink, *enc, *h264p, *rtph264;
+  GstElement *filter0;//, *filter1;
   GstBus *bus;
   GstMessage *msg;
   GstStateChangeReturn ret;
@@ -28,36 +13,29 @@ int main(int argc, char *argv[]) {
 
   /* Create the elements */
   source = gst_element_factory_make ("v4l2src", "source");
-  enc = gst_element_factory_make("jpegenc", "enc");
-  rtpjpgpay = gst_element_factory_make("rtpjpegpay", "rtpjpgpay");
+  enc = gst_element_factory_make("x264enc", "enc");
+  h264p = gst_element_factory_make("h264parse", "h264p");
+  rtph264 = gst_element_factory_make("rtph264pay", "rtph264");
   sink = gst_element_factory_make ("udpsink", "sink");
-  // cfilter = gst_caps_new_simple ("video/x-raw",
-  //         "format", G_TYPE_STRING, "I420",
-  //         "width", G_TYPE_INT, 384,
-  //         "height", G_TYPE_INT, 288,
-  //         NULL);
-  cfilter = gst_element_factory_make ("capsfilter", NULL);
-  gst_util_set_object_arg (G_OBJECT (cfilter), "caps",
-    "video/x-raw, width=320, height=240, "
-    "format={ I420, YV12, YUY2, UYVY, AYUV, Y41B, Y42B, "
-    "YVYU, Y444, v210, v216, NV12, NV21, UYVP, A420, YUV9, YVU9, IYU1 }");
 
+  filter0 = gst_element_factory_make ("capsfilter", NULL);
+  gst_util_set_object_arg (G_OBJECT (filter0), "caps",
+    "video/x-raw, width=1280, height=720");
 
-  g_object_set(G_OBJECT(sink), "host", "127.0.0.1", NULL);
-  g_object_set(G_OBJECT(sink), "port", 5200, NULL);
+  g_object_set(G_OBJECT(sink), "host", "127.0.0.1", "port", 5000, NULL);
+  g_object_set(G_OBJECT(enc), "tune", 0x00000004, "bitrate", 30000, "byte-stream", TRUE, NULL); 
 
   /* Create the empty pipeline */
   pipeline = gst_pipeline_new ("test-pipeline");
 
-  if (!pipeline || !source || !sink || !cfilter) {
+  if (!pipeline || !source || !sink || !filter0) {
     g_printerr ("Not all elements could be created.\n");
     return -1;
   }
 
   /* Build the pipeline */
-  gst_bin_add_many (GST_BIN (pipeline), source, cfilter, enc, rtpjpgpay, sink, NULL);
-  // link_elements_with_filter(source, enc, cfilter);
-  if (gst_element_link_many (source, cfilter, enc, rtpjpgpay, sink, NULL) != TRUE) {
+  gst_bin_add_many (GST_BIN (pipeline), source, filter0, enc, h264p, rtph264, sink, NULL);
+  if (gst_element_link_many (source, filter0, enc, h264p, rtph264, sink, NULL) != TRUE) {
     g_printerr ("Elements could not be linked.\n");
     gst_object_unref (pipeline);
     return -1;
