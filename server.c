@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     "video/x-raw, width=1280, height=720");
 
   g_object_set(G_OBJECT(sink), "host", "127.0.0.1", "port", 5000, NULL);
-  g_object_set(G_OBJECT(enc), "tune", 0x00000004, "bitrate", 30000, "byte-stream", TRUE, NULL); 
+  g_object_set(G_OBJECT(enc), "tune", 0x00000004, "bitrate", 1000, NULL);
 
   /* Create the empty pipeline */
   pipeline = gst_pipeline_new ("test-pipeline");
