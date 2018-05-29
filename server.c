@@ -35,11 +35,16 @@ int main(int argc, char *argv[]) {
 
   /* Build the pipeline */
   gst_bin_add_many (GST_BIN (pipeline), source, filter0, enc, h264p, rtph264, sink, NULL);
-  if (gst_element_link_many (source, filter0, enc, h264p, rtph264, sink, NULL) != TRUE) {
-    g_printerr ("Elements could not be linked.\n");
-    gst_object_unref (pipeline);
-    return -1;
-  }
+  gst_element_link(source, filter0);
+  gst_element_link(filter0, enc);
+  gst_element_link(enc, h264p);
+  gst_element_link(h264p, rtph264);
+  gst_element_link(rtph264, sink);
+  // if (gst_element_link_many (source, filter0, enc, h264p, rtph264, sink, NULL) != TRUE) {
+  //   g_printerr ("Elements could not be linked.\n");
+  //   gst_object_unref (pipeline);
+  //   return -1;
+  // }
 
   /* Modify the source's properties */
   // g_object_set (source, "pattern", 0, NULL);

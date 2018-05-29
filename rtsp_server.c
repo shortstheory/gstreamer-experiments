@@ -56,11 +56,11 @@ custom_create_element (GstRTSPMediaFactory * factory, const GstRTSPUrl  *url)
     h264p = gst_element_factory_make("h264parse", "h264p");
     rtph264 = gst_element_factory_make("rtph264pay", "pay0");
     g_object_set(G_OBJECT(enc), "tune", 0x00000004, "bitrate", 1000, NULL);
-  pipeline = gst_pipeline_new ("test-pipeline");
-  if (!pipeline || !source || !sink) {
-    g_printerr ("Not all elements could be created.\n");
-    return NULL;
-  }
+    pipeline = gst_pipeline_new ("test-pipeline");
+    if (!pipeline || !source || !sink) {
+      g_printerr ("Not all elements could be created.\n");
+      return NULL;
+    }
   gst_bin_add_many (GST_BIN (pipeline), source, enc, h264p, rtph264, NULL);
   gst_element_link_many (source, enc, h264p, rtph264, NULL);
 
