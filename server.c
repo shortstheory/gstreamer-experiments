@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
 
   filter0 = gst_element_factory_make ("capsfilter", NULL);
   gst_util_set_object_arg (G_OBJECT (filter0), "caps",
-    "video/x-raw, width=1280, height=720");//, framerate=10/1");
+    "video/x-raw, width=1280, height=720, framerate=15/1");
 
   g_object_set(G_OBJECT(sink), "host", "127.0.0.1", "port", 5000, NULL);
   g_object_set(G_OBJECT(enc), "tune", 0x00000004, "bitrate", 1000, NULL);
@@ -35,8 +35,7 @@ int main(int argc, char *argv[]) {
 
   /* Build the pipeline */
   gst_bin_add_many (GST_BIN (pipeline), source, enc, h264p, rtph264, sink, NULL);
-  gst_element_link(source, filter0);
-  gst_element_link(filter0, enc);
+  gst_element_link(source, enc);
   gst_element_link(enc, h264p);
   gst_element_link(h264p, rtph264);
   gst_element_link(rtph264, sink);
