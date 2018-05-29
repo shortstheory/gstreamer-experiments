@@ -67,6 +67,13 @@ build demo@exe/server.c.o: c_COMPILER ../server.c
 build demo: c_LINKER demo@exe/server.c.o
  LINK_ARGS = -Wl,--no-undefined -Wl,--as-needed -Wl,--start-group -lgstreamer-1.0 -lgobject-2.0 -lglib-2.0 -Wl,--end-group
 
+build rtp@exe/rtcp_sender.c.o: c_COMPILER ../rtcp_sender.c
+ DEPFILE = rtp@exe/rtcp_sender.c.o.d
+ ARGS = -Irtp@exe -I. -I.. -I/usr/include/gstreamer-1.0 -I/usr/lib/x86_64-linux-gnu/gstreamer-1.0/include -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -O0 -g -pthread
+
+build rtp: c_LINKER rtp@exe/rtcp_sender.c.o
+ LINK_ARGS = -Wl,--no-undefined -Wl,--as-needed -Wl,--start-group -lgstreamer-1.0 -lgobject-2.0 -lglib-2.0 -Wl,--end-group
+
 # Test rules
 
 build meson-test: CUSTOM_COMMAND all PHONY
@@ -113,7 +120,7 @@ build meson-uninstall: CUSTOM_COMMAND PHONY
 
 build uninstall: phony meson-uninstall
 
-build all: phony demo
+build all: phony demo rtp
 
 default all
 
