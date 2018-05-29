@@ -35,15 +35,17 @@ int main(int argc, char *argv[])
     pipeline = gst_pipeline_new ("test-pipeline");
     // gst_bin_add_many (GST_BIN (pipeline), source, rtcpsrc, identity, enc, h264p, rtph264, bin, sink, NULL);
     //jumbling order of elements doesn't matter here
-    gst_bin_add_many (GST_BIN (pipeline), enc, bin, rtph264, sink, h264p, source, NULL);
+    gst_bin_add_many (GST_BIN (pipeline), enc, bin, rtph264, sink, h264p, source, identity, rtcpsrc, NULL);
 
     gst_element_link_many(source, enc, h264p, rtph264, NULL);
     gst_element_link(rtcpsrc, identity);
 
     GstPad* videosinkpad, *videosrcpad;
+    GstPad* rtcp_pad = gst_element_get_request_pad(bin, "recv_rtcp_sink_%u");
     videosinkpad = gst_element_get_request_pad(bin, "send_rtp_sink_%u");
     // videosrcpad = gst_element_get_request_pad(bin, "send_rtp_src_%u");
 
+    gst_pad_link(gst_element_get_static_pad(identity,"src"),rtcp_pad);
     gst_pad_link(gst_element_get_static_pad(rtph264,"src"), videosinkpad);
     gst_element_link(bin, sink);
 
