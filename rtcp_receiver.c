@@ -5,13 +5,18 @@ int rtcpport = 5005;
 
 int main(int argc, char *argv[])
 {
-    GstElement *pipeline, *source, *sink, *enc, *h264p, *rtph264, *bin, *identity;
-    GstElement *filter0;
-    GstElement *rtcpsrc;
+    GstElement *pipeline, *udpsrc, *imagesink, *dec, *h264depay;
+    GstElement *udprtcpsrc;
 
     GstBus *bus;
     GstMessage *msg;
     gst_init(&argc, &argv);
+
+    udpsrc = gst_element_factory_make ("udpsrc", NULL);
+    imagesink = gst_element_factory_make("xvimagesink", NULL);
+    dec = gst_element_factory_make("h264dec", NULL);
+
+
     source = gst_element_factory_make ("v4l2src", "source");
     enc = gst_element_factory_make("x264enc", "enc");
     h264p = gst_element_factory_make("h264parse", "h264p");
