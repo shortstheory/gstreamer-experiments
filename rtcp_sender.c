@@ -2,12 +2,15 @@
 
 int videoport = 5000;
 int rtcpport = 5005;
+int rtcpsinkport = 5001;
+int bitrate = 5000;
 
 int main(int argc, char *argv[])
 {
     GstElement *pipeline, *source, *sink, *enc, *h264p, *rtph264, *bin, *identity;
     GstElement *filter0;
     GstElement *rtcpsrc;
+    GstElement *rtcpsink;
 
     GstBus *bus;
     GstMessage *msg;
@@ -20,33 +23,37 @@ int main(int argc, char *argv[])
     bin = gst_element_factory_make("rtpbin", "bin");
     filter0 = gst_element_factory_make ("capsfilter", NULL);
     identity = gst_element_factory_make("identity", NULL);
+    rtcpsink = gst_element_factory_make("udpsink", "rtcpsink");
 
     rtcpsrc = gst_element_factory_make("udpsrc", "rtcpsrc");
 
     g_object_set(G_OBJECT (rtcpsrc), "caps", gst_caps_from_string("application/x-rtcp"), "port", 5005, NULL);
 
-    g_object_set(G_OBJECT(sink), "host", "192.168.1.7", "port", videoport, NULL);
+    // g_object_set(G_OBJECT(sink), "host", "192.168.1.7", "port", videoport, NULL);
     gst_util_set_object_arg (G_OBJECT (filter0), "caps", "video/x-raw, width=640, height=360");
 
-    // g_object_set(G_OBJECT(sink), "host", "127.0.0.1", "port", 5000, NULL);
-    g_object_set(G_OBJECT(enc), "tune", 0x00000004, "bitrate", 1000, NULL);
-    g_object_set(G_OBJECT(bin), "latency", 0, NULL);
+    g_object_set(G_OBJECT(rtcpsink), "host", "127.0.0.1", "port", rtcpsinkport, NULL);
+    g_object_set(G_OBJECT(sink), "host", "127.0.0.1", "port", videoport, NULL);
+    g_object_set(G_OBJECT(enc), "tune", 0x00000004, "bitrate", bitrate, NULL);
+    // g_object_set(G_OBJECT(bin), "latency", 0, NULL);
 
     pipeline = gst_pipeline_new ("test-pipeline");
     // gst_bin_add_many (GST_BIN (pipeline), source, rtcpsrc, identity, enc, h264p, rtph264, bin, sink, NULL);
     //jumbling order of elements doesn't matter here
-    gst_bin_add_many (GST_BIN (pipeline), enc, bin, rtph264, sink, h264p, source, identity, rtcpsrc, NULL);
+    gst_bin_add_many (GST_BIN (pipeline), enc, bin, rtph264, sink, h264p, source, identity, rtcpsrc, rtcpsink, NULL);
 
     gst_element_link_many(source, enc, h264p, rtph264, NULL);
     gst_element_link(rtcpsrc, identity);
 
     GstPad* videosinkpad, *videosrcpad;
     GstPad* rtcp_pad = gst_element_get_request_pad(bin, "recv_rtcp_sink_%u");
+    GstPad* rtcp_src_pad = gst_element_get_request_pad(bin, "send_rtcp_src_%u");
     videosinkpad = gst_element_get_request_pad(bin, "send_rtp_sink_%u");
     // videosrcpad = gst_element_get_request_pad(bin, "send_rtp_src_%u");
 
     gst_pad_link(gst_element_get_static_pad(identity,"src"),rtcp_pad);
     gst_pad_link(gst_element_get_static_pad(rtph264,"src"), videosinkpad);
+    gst_pad_link(rtcp_src_pad, gst_element_get_static_pad(rtcpsink,"sink"));
     gst_element_link(bin, sink);
 
     gst_element_set_state (pipeline, GST_STATE_PLAYING);
