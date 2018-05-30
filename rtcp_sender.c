@@ -4,6 +4,8 @@ int videoport = 5000;
 int rtcpport = 5005;
 int rtcpsinkport = 5001;
 int bitrate = 5000;
+char recv_addr[] = "192.168.1.7";
+// char recv_addr[] = "127.0.0.1";
 
 int main(int argc, char *argv[])
 {
@@ -15,6 +17,7 @@ int main(int argc, char *argv[])
     GstBus *bus;
     GstMessage *msg;
     gst_init(&argc, &argv);
+    
     source = gst_element_factory_make ("v4l2src", "source");
     enc = gst_element_factory_make("x264enc", "enc");
     h264p = gst_element_factory_make("h264parse", "h264p");
@@ -27,29 +30,20 @@ int main(int argc, char *argv[])
 
     rtcpsrc = gst_element_factory_make("udpsrc", "rtcpsrc");
 
-    g_object_set(G_OBJECT (rtcpsrc), "caps", gst_caps_from_string("application/x-rtcp"), "port", 5005, NULL);
-
-    // g_object_set(G_OBJECT(sink), "host", "192.168.1.7", "port", videoport, NULL);
-    gst_util_set_object_arg (G_OBJECT (filter0), "caps", "video/x-raw, width=640, height=360");
-
-    g_object_set(G_OBJECT(rtcpsink), "host", "127.0.0.1", "port", rtcpsinkport, NULL);
-    g_object_set(G_OBJECT(sink), "host", "127.0.0.1", "port", videoport, NULL);
+    g_object_set(G_OBJECT (rtcpsrc), "caps", gst_caps_from_string("application/x-rtcp"), "port", rtcpport, NULL);
+    g_object_set(G_OBJECT(rtcpsink), "host", recv_addr, "port", rtcpsinkport, NULL);
+    g_object_set(G_OBJECT(sink), "host", recv_addr, "port", videoport, NULL);
     g_object_set(G_OBJECT(enc), "tune", 0x00000004, "bitrate", bitrate, NULL);
-    // g_object_set(G_OBJECT(bin), "latency", 0, NULL);
 
     pipeline = gst_pipeline_new ("test-pipeline");
-    // gst_bin_add_many (GST_BIN (pipeline), source, rtcpsrc, identity, enc, h264p, rtph264, bin, sink, NULL);
-    //jumbling order of elements doesn't matter here
     gst_bin_add_many (GST_BIN (pipeline), enc, bin, rtph264, sink, h264p, source, identity, rtcpsrc, rtcpsink, NULL);
 
     gst_element_link_many(source, enc, h264p, rtph264, NULL);
     gst_element_link(rtcpsrc, identity);
 
-    GstPad* videosinkpad, *videosrcpad;
+    GstPad* videosinkpad = gst_element_get_request_pad(bin, "send_rtp_sink_%u");
     GstPad* rtcp_pad = gst_element_get_request_pad(bin, "recv_rtcp_sink_%u");
     GstPad* rtcp_src_pad = gst_element_get_request_pad(bin, "send_rtcp_src_%u");
-    videosinkpad = gst_element_get_request_pad(bin, "send_rtp_sink_%u");
-    // videosrcpad = gst_element_get_request_pad(bin, "send_rtp_src_%u");
 
     gst_pad_link(gst_element_get_static_pad(identity,"src"),rtcp_pad);
     gst_pad_link(gst_element_get_static_pad(rtph264,"src"), videosinkpad);
