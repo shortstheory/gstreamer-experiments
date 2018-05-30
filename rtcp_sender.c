@@ -25,10 +25,10 @@ int main(int argc, char *argv[])
 
     g_object_set(G_OBJECT (rtcpsrc), "caps", gst_caps_from_string("application/x-rtcp"), "port", 5005, NULL);
 
-    // g_object_set(G_OBJECT(sink), "host", "192.168.1.7", "port", videoport, NULL);
+    g_object_set(G_OBJECT(sink), "host", "192.168.1.7", "port", videoport, NULL);
     gst_util_set_object_arg (G_OBJECT (filter0), "caps", "video/x-raw, width=640, height=360");
 
-    g_object_set(G_OBJECT(sink), "host", "127.0.0.1", "port", 5000, NULL);
+    // g_object_set(G_OBJECT(sink), "host", "127.0.0.1", "port", 5000, NULL);
     g_object_set(G_OBJECT(enc), "tune", 0x00000004, "bitrate", 1000, NULL);
     g_object_set(G_OBJECT(bin), "latency", 0, NULL);
 
