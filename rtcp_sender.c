@@ -6,9 +6,12 @@ int videoport = 5000;
 int rtcpport = 5005;
 int rtcpsinkport = 5001;
 int bitrate = 1000;
+int bitrate2 = 500;
+gboolean switchvalue = TRUE;
 // char recv_addr[] = "192.168.1.7";
 char recv_addr[] = "127.0.0.1";
 
+GstElement *pipeline, *source, *sink, *enc, *h264p, *rtph264, *bin, *identity, *senderidentity;
 static gboolean
 process_rtcp_packet(GstRTCPPacket *packet){
 	guint32 ssrc, rtptime, packet_count, octet_count;
@@ -25,17 +28,26 @@ process_rtcp_packet(GstRTCPPacket *packet){
 		gst_rtcp_packet_get_rb(packet, i, &ssrc, &fractionlost,
 				&packetslost, &exthighestseq, &jitter, &lsr, &dlsr);
 
-		g_warning("    block         %d", i);
-		g_warning("    ssrc          %d", ssrc);
-		g_warning("    highest   seq %d", exthighestseq);
-		g_warning("    jitter        %d", jitter);
-		g_warning("    fraction lost %d", fractionlost);
-		g_warning("    packet   lost %d", packetslost);
+		g_warning("    block         %llu", i);
+		g_warning("    ssrc          %llu", ssrc);
+		g_warning("    highest   seq %llu", exthighestseq);
+		g_warning("    jitter        %llu", jitter);
+		g_warning("    fraction lost %llu", fractionlost);
+		g_warning("    packet   lost %llu", packetslost);
 	}
 
 	//g_debug("Received rtcp packet");
 
 	return TRUE;
+}
+
+void process_sender_packet(GstRTCPPacket *packet)
+{
+    guint32 ssrc, rtptime, packet_count, octet_count;
+    guint64 ntptime;
+    gst_rtcp_packet_sr_get_sender_info(packet, &ssrc, &ntptime, &rtptime, &packet_count, &octet_count);
+    g_warning("Sender report");
+    g_warning("ssrc %llu, ntptime %llu, rtptime %llu, packetcount %llu", ssrc, ntptime, rtptime, packet_count);
 }
 
 static void rtcp_recv_callback(GstElement *src, GstBuffer *buf, gpointer data)
@@ -53,7 +65,18 @@ static void rtcp_recv_callback(GstElement *src, GstBuffer *buf, gpointer data)
 		switch (type) {
 		case GST_RTCP_TYPE_RR:
             process_rtcp_packet(packet);
-			// send_event_to_encoder(venc, &rtcp_pkt);
+            // if (switchvalue) {
+            //     g_warning("Inc bitrate");
+            //     g_object_set(G_OBJECT(enc), "bitrate", bitrate, NULL);
+            //     switchvalue = FALSE;
+            // } else {
+            //     g_warning("dec bitrate");
+            //     g_object_set(G_OBJECT(enc), "bitrate", bitrate2, NULL);
+            //     switchvalue = TRUE;
+            // }
+            // send_event_to_encoder(venc, &rtcp_pkt);
+        case GST_RTCP_TYPE_SR:
+            process_sender_packet(packet);
 			break;
 		default:
 			g_debug("Other types");
@@ -67,7 +90,6 @@ static void rtcp_recv_callback(GstElement *src, GstBuffer *buf, gpointer data)
 
 int main(int argc, char *argv[])
 {
-    GstElement *pipeline, *source, *sink, *enc, *h264p, *rtph264, *bin, *identity;
     GstElement *filter0;
     GstElement *rtcpsrc;
     GstElement *rtcpsink;
@@ -93,6 +115,7 @@ int main(int argc, char *argv[])
     bin = gst_element_factory_make("rtpbin", "bin");
     filter0 = gst_element_factory_make ("capsfilter", NULL);
     identity = gst_element_factory_make("identity", NULL);
+    senderidentity = gst_element_factory_make("identity", NULL);
     rtcpsink = gst_element_factory_make("udpsink", "rtcpsink");
     rtcpsrc = gst_element_factory_make("udpsrc", "rtcpsrc");
     
@@ -104,7 +127,7 @@ int main(int argc, char *argv[])
     g_object_set(G_OBJECT(bin), "latency", 0, NULL);
 
     pipeline = gst_pipeline_new ("test-pipeline");
-    gst_bin_add_many (GST_BIN (pipeline), enc, bin, rtph264, sink, h264p, source, identity, rtcpsrc, rtcpsink, NULL);
+    gst_bin_add_many (GST_BIN (pipeline), enc, bin, rtph264, sink, h264p, source, identity, rtcpsrc, senderidentity, rtcpsink, NULL);
     int ret = gst_element_link_filtered(source, enc, caps);
     gst_element_link(enc, h264p);
     gst_element_link(h264p, rtph264);
@@ -116,9 +139,13 @@ int main(int argc, char *argv[])
 
     gst_pad_link(gst_element_get_static_pad(identity,"src"),rtcp_pad);
     gst_pad_link(gst_element_get_static_pad(rtph264,"src"), videosinkpad);
-    gst_pad_link(rtcp_src_pad, gst_element_get_static_pad(rtcpsink,"sink"));
+    
+    gst_pad_link(rtcp_src_pad, gst_element_get_static_pad(senderidentity,"sink"));
+    gst_pad_link(gst_element_get_static_pad(senderidentity,"src"), gst_element_get_static_pad(rtcpsink,"sink"));
     gst_element_link(bin, sink);
     g_signal_connect (identity, "handoff", G_CALLBACK (rtcp_recv_callback), NULL);
+    g_signal_connect (senderidentity, "handoff", G_CALLBACK (rtcp_recv_callback), NULL);
+
     printf("Starting pipeline");
     gst_element_set_state (pipeline, GST_STATE_PLAYING);
 
