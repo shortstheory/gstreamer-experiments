@@ -1,11 +1,24 @@
 #include <gst/gst.h>
-
+#include <gst/rtp/gstrtcpbuffer.h>
+#include <stdio.h>
 int videoport = 5000;
 int rtcpport = 5005;
 int rtcpsinkport = 5001;
 int bitrate = 1000;
-char recv_addr[] = "192.168.1.7";
-// char recv_addr[] = "127.0.0.1";
+// char recv_addr[] = "192.168.1.7";
+char recv_addr[] = "127.0.0.1";
+
+static void rtcp_recv_callback(GstElement *src, GstBuffer *buf, gpointer data)
+{
+    g_warning("rtcp_received");
+    gboolean res = gst_rtcp_buffer_validate_data(data, 4);
+    if (res == TRUE) {
+        g_warning("Valid buffer");
+    } else {
+        g_warning("Bad buf");
+    }
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -18,14 +31,15 @@ int main(int argc, char *argv[])
     GstMessage *msg;
     gst_init(&argc, &argv);
 
-    GstCaps *caps;
+    GstCaps *caps, *rtcpcaps;
 
     caps = gst_caps_new_simple ("video/x-raw",
                                 "width", G_TYPE_INT, 640,
                                 "height", G_TYPE_INT, 360,
                                 "framerate", GST_TYPE_FRACTION, 30, 1,
                                 NULL);
-                                
+    rtcpcaps = gst_caps_new_simple("application/x-rtcp", NULL); //might not be needed
+
     source = gst_element_factory_make ("v4l2src", "source");
     enc = gst_element_factory_make("x264enc", "enc");
     h264p = gst_element_factory_make("h264parse", "h264p");
@@ -59,10 +73,10 @@ int main(int argc, char *argv[])
     gst_pad_link(gst_element_get_static_pad(rtph264,"src"), videosinkpad);
     gst_pad_link(rtcp_src_pad, gst_element_get_static_pad(rtcpsink,"sink"));
     gst_element_link(bin, sink);
-
+    g_signal_connect (identity, "handoff", G_CALLBACK (rtcp_recv_callback), NULL);
+    printf("Starting pipeline");
     gst_element_set_state (pipeline, GST_STATE_PLAYING);
-    // gst_pipeline_set_delay(pipeline, 2000);
-    // g_print("%lu", gst_pipeline_get_delay(pipeline));
+
     bus = gst_element_get_bus (pipeline);
     msg = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_ERROR | GST_MESSAGE_EOS);
 
