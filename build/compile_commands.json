@@ -1,0 +1,7 @@
+[
+  {
+    "directory": "/home/nic/gsoc-2018/gstreamer-experiments/build",
+    "command": "ccache c++  -Irtp@exe -I. -I.. -I/usr/include/gstreamer-1.0 -I/usr/lib/x86_64-linux-gnu/gstreamer-1.0/include -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -pthread -MMD -MQ 'rtp@exe/rtcp_sender.cpp.o' -MF 'rtp@exe/rtcp_sender.cpp.o.d' -o 'rtp@exe/rtcp_sender.cpp.o' -c ../rtcp_sender.cpp",
+    "file": "../rtcp_sender.cpp"
+  }
+]

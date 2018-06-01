@@ -57,11 +57,11 @@ void process_sender_packet(GstRTCPPacket *packet)
 static void rtcp_recv_callback(GstElement *src, GstBuffer *buf, gpointer data)
 {
     // g_warning("rtcp_received %d", gst_rtcp_buffer_get_packet_count(buf));
-    GstRTCPBuffer *rtcpbuf = malloc(sizeof(GstRTCPBuffer));
+    GstRTCPBuffer *rtcpbuf = (GstRTCPBuffer*)malloc(sizeof(GstRTCPBuffer));
     rtcpbuf->buffer = NULL;
     // rtcpbuf->map = GST_MAP_INFO_INIT;
     gst_rtcp_buffer_map(buf, GST_MAP_READ, rtcpbuf);
-    GstRTCPPacket *packet = malloc(sizeof(GstRTCPPacket));
+    GstRTCPPacket *packet = (GstRTCPPacket*)malloc(sizeof(GstRTCPPacket));
     gboolean more = gst_rtcp_buffer_get_first_packet(rtcpbuf, packet);
 	while (more) {
 		GstRTCPType type;
@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
     gst_element_set_state (pipeline, GST_STATE_PLAYING);
 
     bus = gst_element_get_bus (pipeline);
-    msg = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_ERROR | GST_MESSAGE_EOS);
+    msg = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
 
 
     // g_print("%s", gst_pad_get_name(videosinkpad));

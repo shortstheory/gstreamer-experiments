@@ -1,0 +1,23 @@
+Build started at 2018-06-01T12:01:26.583127
+Python binary: /usr/bin/python3
+Python system: Linux
+The Meson build system
+Version: 0.42.1
+Source dir: /home/nic/gsoc-2018/gstreamer-experiments
+Build dir: /home/nic/gsoc-2018/gstreamer-experiments/build
+Build type: native build
+Project name: tutorial
+Sanity testing C++ compiler: ccache c++
+Is cross compiler: False.
+Sanity check compiler command line: ccache c++ /home/nic/gsoc-2018/gstreamer-experiments/build/meson-private/sanitycheckcpp.cc -o /home/nic/gsoc-2018/gstreamer-experiments/build/meson-private/sanitycheckcpp.exe
+Sanity check compile stdout:
+
+-----
+Sanity check compile stderr:
+
+-----
+Running test binary command: /home/nic/gsoc-2018/gstreamer-experiments/build/meson-private/sanitycheckcpp.exe
+Native C++ compiler: ccache c++ (gcc 5.4.0)
+Build machine cpu family: x86_64
+Build machine cpu: x86_64
+Build targets in project: 1

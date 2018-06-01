@@ -1,5 +1,4 @@
-project('tutorial', 'c')
+project('tutorial', 'cpp')
 gstdep = dependency('gstreamer-1.0')
 gst_base_dep = dependency('gstreamer-rtp-1.0')
-executable('demo', 'server.c', dependencies : gstdep)
-executable('rtp', 'rtcp_sender.c', dependencies: [gstdep, gst_base_dep])
+executable('rtp', 'rtcp_sender.cpp', dependencies: [gstdep, gst_base_dep])

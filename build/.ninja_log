@@ -1,0 +1,8 @@
+# ninja log v5
+33	68	0	rtp	b74c875967546111
+13	97	0	demo	61c3e81aff506f2d
+1	32	0	rtp@exe/rtcp_sender.c.o	1bdc1b276e6a5bdd
+0	12	0	demo@exe/server.c.o	6a7014fbf00210be
+0	576	0	build.ninja	bd31777205a8c17f
+0	236	0	rtp@exe/rtcp_sender.cpp.o	d0bef55788d29a14
+238	310	0	rtp	74b2e0e3a7c94ee5
