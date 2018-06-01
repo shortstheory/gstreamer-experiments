@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <gst/rtp/gstrtcpbuffer.h>
+#include <time.h>
 int videoport = 5000;
 int rtcpport = 5005;
 int rtcpsinkport = 5001;
@@ -28,12 +29,13 @@ process_rtcp_packet(GstRTCPPacket *packet){
 		gst_rtcp_packet_get_rb(packet, i, &ssrc, &fractionlost,
 				&packetslost, &exthighestseq, &jitter, &lsr, &dlsr);
 
-		g_warning("    block         %llu", i);
-		g_warning("    ssrc          %llu", ssrc);
-		g_warning("    highest   seq %llu", exthighestseq);
-		g_warning("    jitter        %llu", jitter);
-		g_warning("    fraction lost %llu", fractionlost);
-		g_warning("    packet   lost %llu", packetslost);
+		// g_warning("    block         %llu", i);
+		// g_warning("    ssrc          %llu", ssrc);
+		// g_warning("    highest   seq %llu", exthighestseq);
+		// g_warning("    jitter        %llu", jitter);
+		// g_warning("    fraction lost %llu", fractionlost);
+		// g_warning("    packet   lost %llu", packetslost);
+        g_warning("lsr %llu", lsr>>16);
 	}
 
 	//g_debug("Received rtcp packet");
@@ -47,6 +49,8 @@ void process_sender_packet(GstRTCPPacket *packet)
     guint64 ntptime;
     gst_rtcp_packet_sr_get_sender_info(packet, &ssrc, &ntptime, &rtptime, &packet_count, &octet_count);
     g_warning("Sender report");
+    ntptime = ntptime >> 32;
+    ntptime = (ntptime & 0x0000FFFF);
     g_warning("ssrc %llu, ntptime %llu, rtptime %llu, packetcount %llu", ssrc, ntptime, rtptime, packet_count);
 }
 
@@ -75,6 +79,7 @@ static void rtcp_recv_callback(GstElement *src, GstBuffer *buf, gpointer data)
             //     switchvalue = TRUE;
             // }
             // send_event_to_encoder(venc, &rtcp_pkt);
+            break;
         case GST_RTCP_TYPE_SR:
             process_sender_packet(packet);
 			break;
@@ -93,6 +98,7 @@ int main(int argc, char *argv[])
     GstElement *filter0;
     GstElement *rtcpsrc;
     GstElement *rtcpsink;
+    g_warning("%llu", time(NULL)+2208988800);
 
     GstBus *bus;
     GstMessage *msg;
