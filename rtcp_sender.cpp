@@ -66,6 +66,7 @@ static void rtcp_recv_callback(GstElement *src, GstBuffer *buf, gpointer data)
 	while (more) {
 		GstRTCPType type;
 		type = gst_rtcp_packet_get_type(packet);
+        g_warning("pkt type %d", type);
 		switch (type) {
 		case GST_RTCP_TYPE_RR:
             process_rtcp_packet(packet);
