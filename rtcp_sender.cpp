@@ -7,7 +7,7 @@
 int videoport = 5000;
 int rtcpport = 5005;
 int rtcpsinkport = 5001;
-int bitrate = 1000000;
+int bitrate = 10000;
 int bitrate2 = 500;
 gboolean switchvalue = TRUE;
 // char recv_addr[] = "192.168.1.7";
@@ -94,12 +94,47 @@ static void rtcp_recv_callback(GstElement *src, GstBuffer *buf, gpointer data)
 
 }
 
+static gboolean
+gst_my_filter_sink_event (GstPad    *pad,
+                  GstObject *parent,
+                  GstEvent  *event)
+{
+    // GstEventType type = GST_EVENT_TYPE(event);
+    // g_warning("event %d", type);
+    return gst_pad_event_default (pad, parent, event);
+    // return gst_pad_push_event (filter->srcpad, event);
+//   gboolean ret;
+//     g_warning("got event");
+//   switch (GST_EVENT_TYPE (event)) {
+//     case GST_EVENT_CAPS:
+//       /* we should handle the format here */
+
+//       /* push the event downstream */
+//     //   ret = gst_pad_push_event (filter->srcpad, event);
+//       break;
+//     case GST_EVENT_EOS:
+//       /* end-of-stream, we should close down all stream leftovers here */
+//     //   gst_my_filter_stop_processing (filter);
+
+//       ret = gst_pad_event_default (pad, parent, event);
+//       break;
+//     default:
+//       /* just call the default handler */
+//       ret = gst_pad_event_default (pad, parent, event);
+//       break;
+//   }
+//   return ret;
+}
+
+
 
 int main(int argc, char *argv[])
 {
     GstElement *filter0;
     GstElement *rtcpsrc;
     GstElement *rtcpsink;
+    GstElement *enc_ident;
+    // GstElement *identity;
     g_warning(" Hi %llu", time(NULL)+2208988800);
 
     GstBus *bus;
@@ -122,12 +157,14 @@ int main(int argc, char *argv[])
     sink = gst_element_factory_make ("udpsink", "sink");
     bin = gst_element_factory_make("rtpbin", "bin");
     filter0 = gst_element_factory_make ("capsfilter", NULL);
+    enc_ident = gst_element_factory_make("identity", NULL);
     identity = gst_element_factory_make("identity", NULL);
     senderidentity = gst_element_factory_make("identity", NULL);
     rtcpsink = gst_element_factory_make("udpsink", "rtcpsink");
     rtcpsrc = gst_element_factory_make("udpsrc", "rtcpsrc");
     
     g_object_set(G_OBJECT (source), "device", "/dev/video0", NULL);
+    g_object_set(G_OBJECT(enc_ident), "qos", TRUE, NULL);
     g_object_set(G_OBJECT (rtcpsrc), "caps", gst_caps_from_string("application/x-rtcp"), "port", rtcpport, NULL);
     g_object_set(G_OBJECT(rtcpsink), "host", recv_addr, "port", rtcpsinkport, NULL);
     g_object_set(G_OBJECT(sink), "host", recv_addr, "port", videoport, NULL);//"qos", TRUE, NULL);
@@ -138,16 +175,16 @@ int main(int argc, char *argv[])
     g_object_set(G_OBJECT(enc), "tune", 0x00000004, "bitrate", bitrate, NULL);
     g_object_set(G_OBJECT(bin), "latency", 0, NULL);
     pipeline = gst_pipeline_new ("test-pipeline");
-    gst_bin_add_many (GST_BIN (pipeline), enc, bin, rtph264, sink, h264p, source, identity, rtcpsrc, senderidentity, rtcpsink, NULL);
+    gst_bin_add_many (GST_BIN (pipeline), enc, bin, rtph264, enc_ident, sink, h264p, source, identity, rtcpsrc, senderidentity, rtcpsink, NULL);
     int ret = gst_element_link_filtered(source, enc, caps);
-    gst_element_link(enc, h264p);
+    gst_element_link_many(enc, enc_ident, h264p, NULL);
     gst_element_link(h264p, rtph264);
     gst_element_link(rtcpsrc, identity);
 
     GstPad* videosinkpad = gst_element_get_request_pad(bin, "send_rtp_sink_%u");
     GstPad* rtcp_pad = gst_element_get_request_pad(bin, "recv_rtcp_sink_%u");
     GstPad* rtcp_src_pad = gst_element_get_request_pad(bin, "send_rtcp_src_%u");
-
+    // gst_pad_set_event_function_full(gst_element_get_static_pad, "sink", &myfync,NULL,NULL);
     gst_pad_link(gst_element_get_static_pad(identity,"src"),rtcp_pad);
     gst_pad_link(gst_element_get_static_pad(rtph264,"src"), videosinkpad);
     
@@ -157,11 +194,13 @@ int main(int argc, char *argv[])
     g_signal_connect (identity, "handoff", G_CALLBACK (rtcp_recv_callback), NULL);
     g_signal_connect (senderidentity, "handoff", G_CALLBACK (rtcp_recv_callback), NULL);
 
+    gst_pad_set_event_function(gst_pad_get_peer(gst_element_get_static_pad(sink,"sink")), gst_my_filter_sink_event);
     printf("Starting pipeline");
     gst_element_set_state (pipeline, GST_STATE_PLAYING);
 
     bus = gst_element_get_bus (pipeline);
-    msg = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
+while(true) {
+    msg = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS | GST_MESSAGE_QOS));
 
   if (msg != NULL) {
     GError *err;
@@ -179,7 +218,15 @@ int main(int argc, char *argv[])
         g_print ("End-Of-Stream reached.\n");
         break;
         case GST_MESSAGE_QOS:
-            g_warning("GOt a QOS event");
+                    gboolean live;
+                    guint64 running_time, stream_time,timestamp,duration;
+            // gst_message_parse_qos (msg,&live,&running_time,&stream_time,&timestamp,&duration);
+            // g_warning("GOt a QOS event %llu %llu %llu %llu", running_time, stream_time, timestamp, duration);
+            gint64 jitter;
+            gdouble prop;
+            gint qual;
+            gst_message_parse_qos_values(msg, &jitter, &prop, &qual);
+            g_warning("gotQoSE %lld %f %lu", jitter, prop, qual );
             break;
       default:
         /* We should not reach here because we only asked for ERRORs and EOS */
@@ -188,6 +235,7 @@ int main(int argc, char *argv[])
     }
     gst_message_unref (msg);
   }
+}
     // g_print("%s", gst_pad_get_name(videosinkpad));
 
     return 0;
