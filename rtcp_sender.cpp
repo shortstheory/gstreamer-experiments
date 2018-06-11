@@ -1,12 +1,13 @@
 #include <gst/gst.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <gst/base/gstbasesink.h>
 #include <gst/rtp/gstrtcpbuffer.h>
 #include <time.h>
 int videoport = 5000;
 int rtcpport = 5005;
 int rtcpsinkport = 5001;
-int bitrate = 1000;
+int bitrate = 1000000;
 int bitrate2 = 500;
 gboolean switchvalue = TRUE;
 // char recv_addr[] = "192.168.1.7";
@@ -48,10 +49,10 @@ void process_sender_packet(GstRTCPPacket *packet)
     guint32 ssrc, rtptime, packet_count, octet_count;
     guint64 ntptime;
     gst_rtcp_packet_sr_get_sender_info(packet, &ssrc, &ntptime, &rtptime, &packet_count, &octet_count);
-    g_warning("Sender report");
+    // g_warning("Sender report");
     ntptime = ntptime >> 32;
     ntptime = (ntptime & 0x0000FFFF);
-    g_warning("ssrc %llu, ntptime %llu, rtptime %llu, packetcount %llu", ssrc, ntptime, rtptime, packet_count);
+    // g_warning("ssrc %llu, ntptime %llu, rtptime %llu, packetcount %llu", ssrc, ntptime, rtptime, packet_count);
 }
 
 static void rtcp_recv_callback(GstElement *src, GstBuffer *buf, gpointer data)
@@ -66,7 +67,7 @@ static void rtcp_recv_callback(GstElement *src, GstBuffer *buf, gpointer data)
 	while (more) {
 		GstRTCPType type;
 		type = gst_rtcp_packet_get_type(packet);
-        g_warning("pkt type %d", type);
+        // g_warning("pkt type %d", type);
 		switch (type) {
 		case GST_RTCP_TYPE_RR:
             process_rtcp_packet(packet);
@@ -99,7 +100,7 @@ int main(int argc, char *argv[])
     GstElement *filter0;
     GstElement *rtcpsrc;
     GstElement *rtcpsink;
-    g_warning("%llu", time(NULL)+2208988800);
+    g_warning(" Hi %llu", time(NULL)+2208988800);
 
     GstBus *bus;
     GstMessage *msg;
@@ -129,10 +130,13 @@ int main(int argc, char *argv[])
     g_object_set(G_OBJECT (source), "device", "/dev/video0", NULL);
     g_object_set(G_OBJECT (rtcpsrc), "caps", gst_caps_from_string("application/x-rtcp"), "port", rtcpport, NULL);
     g_object_set(G_OBJECT(rtcpsink), "host", recv_addr, "port", rtcpsinkport, NULL);
-    g_object_set(G_OBJECT(sink), "host", recv_addr, "port", videoport, NULL);
+    g_object_set(G_OBJECT(sink), "host", recv_addr, "port", videoport, NULL);//"qos", TRUE, NULL);
+    gchar* strval;
+    gboolean boolv;
+    g_object_get(sink, "qos", &boolv);
+    g_warning("V val: %d", boolv);
     g_object_set(G_OBJECT(enc), "tune", 0x00000004, "bitrate", bitrate, NULL);
     g_object_set(G_OBJECT(bin), "latency", 0, NULL);
-
     pipeline = gst_pipeline_new ("test-pipeline");
     gst_bin_add_many (GST_BIN (pipeline), enc, bin, rtph264, sink, h264p, source, identity, rtcpsrc, senderidentity, rtcpsink, NULL);
     int ret = gst_element_link_filtered(source, enc, caps);
@@ -159,7 +163,31 @@ int main(int argc, char *argv[])
     bus = gst_element_get_bus (pipeline);
     msg = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
 
+  if (msg != NULL) {
+    GError *err;
+    gchar *debug_info;
 
+    switch (GST_MESSAGE_TYPE (msg)) {
+      case GST_MESSAGE_ERROR:
+        gst_message_parse_error (msg, &err, &debug_info);
+        g_printerr ("Error received from element %s: %s\n", GST_OBJECT_NAME (msg->src), err->message);
+        g_printerr ("Debugging information: %s\n", debug_info ? debug_info : "none");
+        g_clear_error (&err);
+        g_free (debug_info);
+        break;
+      case GST_MESSAGE_EOS:
+        g_print ("End-Of-Stream reached.\n");
+        break;
+        case GST_MESSAGE_QOS:
+            g_warning("GOt a QOS event");
+            break;
+      default:
+        /* We should not reach here because we only asked for ERRORs and EOS */
+        g_printerr ("Unexpected message received.\n");
+        break;
+    }
+    gst_message_unref (msg);
+  }
     // g_print("%s", gst_pad_get_name(videosinkpad));
 
     return 0;
