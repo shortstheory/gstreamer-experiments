@@ -7,7 +7,7 @@
 int videoport = 5000;
 int rtcpport = 5005;
 int rtcpsinkport = 5001;
-int bitrate = 10000;
+int bitrate = 1000000;
 int bitrate2 = 500;
 gboolean switchvalue = TRUE;
 // char recv_addr[] = "192.168.1.7";
@@ -99,8 +99,8 @@ gst_my_filter_sink_event (GstPad    *pad,
                   GstObject *parent,
                   GstEvent  *event)
 {
-    // GstEventType type = GST_EVENT_TYPE(event);
-    // g_warning("event %d", type);
+    GstEventType type = GST_EVENT_TYPE(event);
+    g_warning("event %d", type);
     return gst_pad_event_default (pad, parent, event);
     // return gst_pad_push_event (filter->srcpad, event);
 //   gboolean ret;
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
     sink = gst_element_factory_make ("udpsink", "sink");
     bin = gst_element_factory_make("rtpbin", "bin");
     filter0 = gst_element_factory_make ("capsfilter", NULL);
-    enc_ident = gst_element_factory_make("identity", NULL);
+    enc_ident = gst_element_factory_make("identity", "encod");
     identity = gst_element_factory_make("identity", NULL);
     senderidentity = gst_element_factory_make("identity", NULL);
     rtcpsink = gst_element_factory_make("udpsink", "rtcpsink");
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
     pipeline = gst_pipeline_new ("test-pipeline");
     gst_bin_add_many (GST_BIN (pipeline), enc, bin, rtph264, enc_ident, sink, h264p, source, identity, rtcpsrc, senderidentity, rtcpsink, NULL);
     int ret = gst_element_link_filtered(source, enc, caps);
-    gst_element_link_many(enc, enc_ident, h264p, NULL);
+    gst_element_link_many(enc, h264p, NULL);
     gst_element_link(h264p, rtph264);
     gst_element_link(rtcpsrc, identity);
 
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
     
     gst_pad_link(rtcp_src_pad, gst_element_get_static_pad(senderidentity,"sink"));
     gst_pad_link(gst_element_get_static_pad(senderidentity,"src"), gst_element_get_static_pad(rtcpsink,"sink"));
-    gst_element_link(bin, sink);
+    gst_element_link_many(bin, enc_ident, sink, NULL);
     g_signal_connect (identity, "handoff", G_CALLBACK (rtcp_recv_callback), NULL);
     g_signal_connect (senderidentity, "handoff", G_CALLBACK (rtcp_recv_callback), NULL);
 

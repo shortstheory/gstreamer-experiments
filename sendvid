@@ -1,0 +1,1 @@
+gst-launch-1.0 v4l2src ! video/x-raw,width=320,height=240 ! x264enc bitrate=500 tune=zerolatency threads=4 ! rtph264pay ! udpsink port=5000
