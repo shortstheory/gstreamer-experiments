@@ -1,4 +1,6 @@
 project('tutorial', 'c')
 gstdep = dependency('gstreamer-1.0')
 gst_base_dep = dependency('gstreamer-rtp-1.0')
-executable('pr', 'g.c', dependencies: [gstdep, gst_base_dep])
+rtsp_dep = dependency('gstreamer-rtsp-1.0')
+rtsp_server = dependency('gstreamer-rtsp-server-1.0')
+executable('pr', 'rtsp_server.c', dependencies: [gstdep, gst_base_dep, rtsp_dep, rtsp_server])

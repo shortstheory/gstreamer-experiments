@@ -1,0 +1,7 @@
+[
+  {
+    "directory": "/home/nic/gsoc-2018/gstreamer-experiments/nw",
+    "command": "c++ -Ipr@exe -I. -I.. -I/usr/include/gstreamer-1.0 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -pthread  -MD -MQ 'pr@exe/rtcp_sender.cpp.o' -MF 'pr@exe/rtcp_sender.cpp.o.d' -o 'pr@exe/rtcp_sender.cpp.o' -c ../rtcp_sender.cpp",
+    "file": "../rtcp_sender.cpp"
+  }
+]

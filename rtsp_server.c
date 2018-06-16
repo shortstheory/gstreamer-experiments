@@ -108,6 +108,7 @@ main (int argc, char *argv[])
   /* create a server instance */
   server = gst_rtsp_server_new ();
   g_object_set (server, "service", port, NULL);
+  gst_rtsp_server_set_address(server, "172.17.0.2");
 
   /* get the mount points for this server, every server has a default object
    * that be used to map uri mount points to media factories */
@@ -130,7 +131,7 @@ main (int argc, char *argv[])
   gst_rtsp_server_attach (server, NULL);
 
   /* start serving */
-  g_print ("stream ready at rtsp://127.0.0.1:%s/test\n", port);
+  g_print ("stream ready at rtsp://172.17.0.1:%s/test\n", port);
   g_main_loop_run (loop);
 
   return 0;

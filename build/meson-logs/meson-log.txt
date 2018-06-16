@@ -1,23 +1,20 @@
-Build started at 2018-06-01T12:01:26.583127
-Python binary: /usr/bin/python3
+Build started at 2018-06-16T15:51:57.482995
+Main binary: /usr/bin/python3
 Python system: Linux
 The Meson build system
-Version: 0.42.1
-Source dir: /home/nic/gsoc-2018/gstreamer-experiments
-Build dir: /home/nic/gsoc-2018/gstreamer-experiments/build
+Version: 0.46.1
+Source dir: /home/f/gstreamer-experiments
+Build dir: /home/f/gstreamer-experiments/build
 Build type: native build
 Project name: tutorial
-Sanity testing C++ compiler: ccache c++
-Is cross compiler: False.
-Sanity check compiler command line: ccache c++ /home/nic/gsoc-2018/gstreamer-experiments/build/meson-private/sanitycheckcpp.cc -o /home/nic/gsoc-2018/gstreamer-experiments/build/meson-private/sanitycheckcpp.exe
-Sanity check compile stdout:
-
------
-Sanity check compile stderr:
-
------
-Running test binary command: /home/nic/gsoc-2018/gstreamer-experiments/build/meson-private/sanitycheckcpp.exe
-Native C++ compiler: ccache c++ (gcc 5.4.0)
+Native C compiler: cc (gcc 5.4.0 "cc (Ubuntu 5.4.0-6ubuntu1~16.04.9) 5.4.0 20160609")
 Build machine cpu family: x86_64
 Build machine cpu: x86_64
+Dependency gstreamer-1.0 found: YES (cached)
+Dependency gstreamer-rtp-1.0 found: YES (cached)
+Dependency gstreamer-rtsp-1.0 found: YES (cached)
+Found pkg-config: /usr/bin/pkg-config (0.29.1)
+Determining dependency 'gstreamer-rtsp-server-1.0' with pkg-config executable '/usr/bin/pkg-config'
+Native dependency gstreamer-rtsp-server-1.0 found: YES 1.6.2
 Build targets in project: 1
+Found ninja-1.5.1 at /usr/bin/ninja
