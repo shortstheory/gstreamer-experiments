@@ -45,25 +45,31 @@ test_rtsp_media_factory_init (TestRTSPMediaFactory * media)
 {
 }
 
+GstElement *pipeline, *source, *enc, *h264p, *rtph264, *identity, *rtcp_udp_src, *fakesink;
 static GstElement *
 custom_create_element (GstRTSPMediaFactory * factory, const GstRTSPUrl  *url)
 {
      /* you can see at query string: */
+     g_warning("CUsom\n");
      g_print("query is: %s\n", url->query);
      /* according to query create GstElement, for example: */
-     GstElement *pipeline, *source, *sink, *enc, *h264p, *rtph264;
-    source = gst_element_factory_make ("v4l2src", "source");
+    source = gst_element_factory_make ("videotestsrc", "source");
     enc = gst_element_factory_make("x264enc", "enc");
     h264p = gst_element_factory_make("h264parse", "h264p");
     rtph264 = gst_element_factory_make("rtph264pay", "pay0");
+    identity = gst_element_factory_make("identity", NULL);
+    rtcp_udp_src = gst_element_factory_make("udpsrc", NULL);
+    fakesink = gst_element_factory_make("fakesink", NULL);
     g_object_set(G_OBJECT(enc), "tune", 0x00000004, "bitrate", 1000, NULL);
+    g_object_set(G_OBJECT(rtcp_udp_src), "caps", gst_caps_from_string("application/x-rtcp"), NULL);
     pipeline = gst_pipeline_new ("test-pipeline");
-    if (!pipeline || !source || !sink) {
-      g_printerr ("Not all elements could be created.\n");
-      return NULL;
-    }
-  gst_bin_add_many (GST_BIN (pipeline), source, enc, h264p, rtph264, NULL);
+    // if (!pipeline || !source || !sink) {
+    // }
+    // g_signal_connect(rr_rtcp_identity, "handoff", G_CALLBACK(static_callback), this);
+
+  gst_bin_add_many (GST_BIN (pipeline), source, enc, h264p, rtph264, rtcp_udp_src, identity, NULL);
   gst_element_link_many (source, enc, h264p, rtph264, NULL);
+  gst_element_link_many(rtcp_udp_src, identity, fakesink);
 
     return pipeline;
 
@@ -82,7 +88,27 @@ static GOptionEntry entries[] = {
   {NULL}
 };
 
+static guint16
+get_port_from_socket (GSocket * socket)
+{
+  guint16 port;
+  GSocketAddress *sockaddr;
+  GError *err;
 
+  GST_DEBUG ("socket: %p", socket);
+  sockaddr = g_socket_get_local_address (socket, &err);
+  if (sockaddr == NULL || !G_IS_INET_SOCKET_ADDRESS (sockaddr)) {
+    g_clear_object (&sockaddr);
+    GST_ERROR ("failed to get sockaddr: %s", err->message);
+    g_error_free (err);
+    return 0;
+  }
+
+  port = g_inet_socket_address_get_port (G_INET_SOCKET_ADDRESS (sockaddr));
+  g_object_unref (sockaddr);
+
+  return port;
+}
 
 GstRTSPFilterResult
 media_filter (GstRTSPSession *sess,
@@ -95,9 +121,14 @@ media_filter (GstRTSPSession *sess,
   GstRTSPStream* stream = gst_rtsp_media_get_stream (media,0);
   if (stream != NULL) {
     g_warning("BABYEEE");
-    GSocket *mysocket= gst_rtsp_stream_get_rtcp_socket (stream, G_SOCKET_FAMILY_IPV4);
-    if (mysocket != NULL) {
-      g_warning("KNACK22");
+    GSocket *mysocket1= gst_rtsp_stream_get_rtcp_socket (stream, G_SOCKET_FAMILY_IPV4);
+    GSocket *mysocket2= gst_rtsp_stream_get_rtp_socket (stream, G_SOCKET_FAMILY_IPV4);
+
+    if (mysocket1 != NULL) {
+      guint16 port1 = get_port_from_socket(mysocket1);
+      guint16 port2 = get_port_from_socket(mysocket2);
+
+      g_warning("KNACK22 + %d %d", port1, port2);
     } else {
       g_warning("fuck");
     }
@@ -145,7 +176,7 @@ main (int argc, char *argv[])
   GMainLoop *loop;
   GstRTSPServer *server;
   GstRTSPMountPoints *mounts;
-  GstRTSPMediaFactory *factory;
+  TestRTSPMediaFactory *factory;
   GOptionContext *optctx;
   GError *error = NULL;
   gst_init (&argc, &argv);
@@ -155,16 +186,16 @@ main (int argc, char *argv[])
   /* create a server instance */
   server = gst_rtsp_server_new ();
   g_object_set (server, "service", port, NULL);
-  // gst_rtsp_server_set_address(server, "172.17.0.2");
+  gst_rtsp_server_set_address(server, "172.17.0.2");
 
   mounts = gst_rtsp_server_get_mount_points (server);
 
-  //  factory = g_object_new(TEST_TYPE_RTSP_MEDIA_FACTORY, NULL);
-    factory = gst_rtsp_media_factory_new ();
-  gst_rtsp_media_factory_set_launch (factory, "videotestsrc ! video/x-raw,width=352,height=288,framerate=15/1 ! "
-      "x264enc ! rtph264pay name=pay0 pt=96 ");
-
-  gst_rtsp_mount_points_add_factory (mounts, "/test", factory);
+   factory = g_object_new(TEST_TYPE_RTSP_MEDIA_FACTORY, NULL);
+    // factory = gst_rtsp_media_factory_new ();
+  // gst_rtsp_media_factory_set_launch (factory, "videotestsrc ! video/x-raw,width=352,height=288,framerate=15/1 ! "
+  //     "x264enc ! rtph264pay name=pay0 pt=96 ");
+ gst_rtsp_mount_points_add_factory (mounts, "/test", GST_RTSP_MEDIA_FACTORY(factory));
+  // gst_rtsp_mount_points_add_factory (mounts, "/test", factory);
 
   g_object_unref (mounts);
 
@@ -174,7 +205,7 @@ main (int argc, char *argv[])
 
   /* start serving */
   // GstRTSPSessionPool* pool = gst_rtsp_server_get_session_pool(server);
-  g_print ("Stream ready at rtsp://localhost:%s/test\n", port);
+  g_print ("custom Stream ready at rtsp://localhost:%s/test\n", port);
   // g_signal_connect(server, "client-connected", G_CALLBACK(client_connect_callback), pool);
   g_main_loop_run (loop);
 
