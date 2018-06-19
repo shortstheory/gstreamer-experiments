@@ -45,7 +45,12 @@ test_rtsp_media_factory_init (TestRTSPMediaFactory * media)
 {
 }
 
-GstElement *pipeline, *source, *enc, *h264p, *rtph264, *identity, *rtcp_udp_src, *fakesink;
+void rtcp_callback(GstElement *src, GstBuffer *buf, gpointer data)
+{
+  g_warning("RTCP!!!");
+}
+
+GstElement *pipeline, *source, *enc, *h264p, *rtph264, *identity, *identity2, *rtcp_udp_src, *fakesink;
 static GstElement *
 custom_create_element (GstRTSPMediaFactory * factory, const GstRTSPUrl  *url)
 {
@@ -58,6 +63,7 @@ custom_create_element (GstRTSPMediaFactory * factory, const GstRTSPUrl  *url)
     h264p = gst_element_factory_make("h264parse", "h264p");
     rtph264 = gst_element_factory_make("rtph264pay", "pay0");
     identity = gst_element_factory_make("identity", NULL);
+    identity2 = gst_element_factory_make("identity", NULL);
     rtcp_udp_src = gst_element_factory_make("udpsrc", NULL);
     fakesink = gst_element_factory_make("fakesink", NULL);
     g_object_set(G_OBJECT(enc), "tune", 0x00000004, "bitrate", 1000, NULL);
@@ -65,11 +71,11 @@ custom_create_element (GstRTSPMediaFactory * factory, const GstRTSPUrl  *url)
     pipeline = gst_pipeline_new ("test-pipeline");
     // if (!pipeline || !source || !sink) {
     // }
-    // g_signal_connect(rr_rtcp_identity, "handoff", G_CALLBACK(static_callback), this);
+    g_signal_connect(identity, "handoff", G_CALLBACK(rtcp_callback), NULL);
 
-  gst_bin_add_many (GST_BIN (pipeline), source, enc, h264p, rtph264, rtcp_udp_src, identity, NULL);
+  gst_bin_add_many (GST_BIN (pipeline), source, enc, h264p, rtph264, rtcp_udp_src, identity, identity2, NULL);
   gst_element_link_many (source, enc, h264p, rtph264, NULL);
-  gst_element_link_many(rtcp_udp_src, identity);
+  gst_element_link_many(rtcp_udp_src, identity, identity2, NULL);
 
     return pipeline;
 
@@ -120,14 +126,14 @@ media_filter (GstRTSPSession *sess,
   g_warning("Media streams - %d", gst_rtsp_media_n_streams (media));
   GstRTSPStream* stream = gst_rtsp_media_get_stream (media,0);
   if (stream != NULL) {
-    g_warning("BABYEEE");
+    // g_warning("BABYEEE");
     GSocket *mysocket1= gst_rtsp_stream_get_rtcp_socket (stream, G_SOCKET_FAMILY_IPV4);
     GSocket *mysocket2= gst_rtsp_stream_get_rtp_socket (stream, G_SOCKET_FAMILY_IPV4);
 
     if (mysocket1 != NULL) {
       guint16 port1 = get_port_from_socket(mysocket1);
       guint16 port2 = get_port_from_socket(mysocket2);
-      // g_object_set(rtcp_udp_src, "port", port1, NULL);
+      g_object_set(rtcp_udp_src, "port", port1, NULL);
       g_warning("KNACK22 + %d %d", port1, port2);
     } else {
       g_warning("fuck");
