@@ -69,7 +69,7 @@ custom_create_element (GstRTSPMediaFactory * factory, const GstRTSPUrl  *url)
 
   gst_bin_add_many (GST_BIN (pipeline), source, enc, h264p, rtph264, rtcp_udp_src, identity, NULL);
   gst_element_link_many (source, enc, h264p, rtph264, NULL);
-  gst_element_link_many(rtcp_udp_src, identity, fakesink);
+  gst_element_link_many(rtcp_udp_src, identity);
 
     return pipeline;
 
@@ -127,7 +127,7 @@ media_filter (GstRTSPSession *sess,
     if (mysocket1 != NULL) {
       guint16 port1 = get_port_from_socket(mysocket1);
       guint16 port2 = get_port_from_socket(mysocket2);
-
+      // g_object_set(rtcp_udp_src, "port", port1, NULL);
       g_warning("KNACK22 + %d %d", port1, port2);
     } else {
       g_warning("fuck");
