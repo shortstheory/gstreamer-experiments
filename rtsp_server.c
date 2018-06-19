@@ -81,6 +81,14 @@ static GOptionEntry entries[] = {
   {NULL}
 };
 
+void
+client_connect_callback (GstRTSPServer *gstrtspserver,
+               GstRTSPClient *arg1,
+               gpointer       user_data)
+{
+  g_warning("client connected!");
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -107,6 +115,7 @@ main (int argc, char *argv[])
 
   /* create a server instance */
   server = gst_rtsp_server_new ();
+  g_signal_connect(server, "client-connected", G_CALLBACK(client_connect_callback), NULL);
   g_object_set (server, "service", port, NULL);
   gst_rtsp_server_set_address(server, "172.17.0.2");
 
