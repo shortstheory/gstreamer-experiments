@@ -83,11 +83,25 @@ static GOptionEntry entries[] = {
 };
 
 
+
+GstRTSPFilterResult
+media_filter (GstRTSPSession *sess,
+                             GstRTSPSessionMedia *session_media,
+                             gpointer user_data)
+{
+  g_warning("media!");
+  GstRTSPMedia* media = gst_rtsp_session_media_get_media (session_media);
+  g_warning("Media streams - %d", gst_rtsp_media_n_streams (media));
+  return GST_RTSP_FILTER_KEEP;
+}
 GstRTSPFilterResult filter_func(GstRTSPSessionPool *pool,
                                  GstRTSPSession *session,
                                  gpointer user_data)
 {
+  int matchChars= 0;
+  //  GstRTSPSessionMedia *media = gst_rtsp_session_get_media(session, "rtsp://127.0.0.1:8554/test", &matchChars);
   g_warning("connection!");
+  gst_rtsp_session_filter (session, media_filter, NULL);
   return GST_RTSP_FILTER_KEEP;
 }
 void
@@ -99,18 +113,16 @@ client_connect_callback (GstRTSPServer *server,
   // if (pool != NULL) {
   g_warning("clientnew connected!! %u", a);
   // } 
-  // GList *session_list = gst_rtsp_session_pool_filter (pool, filter_func,NULL);
 }
 
 static gboolean
 timeout (GstRTSPServer * server)
 {
-  GstRTSPSessionPool *pool;
+    GstRTSPSessionPool *pool;
+
   pool = gst_rtsp_server_get_session_pool (server);
   g_warning("Doing timeout! %d", gst_rtsp_session_pool_get_n_sessions (pool));
-
-  gst_rtsp_session_pool_cleanup (pool);
-  g_object_unref (pool);
+  GList *session_list = gst_rtsp_session_pool_filter (pool, filter_func, NULL);
 
   return TRUE;
 }
