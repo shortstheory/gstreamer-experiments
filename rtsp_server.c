@@ -92,6 +92,18 @@ media_filter (GstRTSPSession *sess,
   g_warning("media!");
   GstRTSPMedia* media = gst_rtsp_session_media_get_media (session_media);
   g_warning("Media streams - %d", gst_rtsp_media_n_streams (media));
+  GstRTSPStream* stream = gst_rtsp_media_get_stream (media,0);
+  if (stream != NULL) {
+    g_warning("BABYEEE");
+    GSocket *mysocket= gst_rtsp_stream_get_rtcp_socket (stream, G_SOCKET_FAMILY_IPV4);
+    if (mysocket != NULL) {
+      g_warning("KNACK22");
+    } else {
+      g_warning("fuck");
+    }
+  } else {
+    g_warning("Oh dear");
+  }
   return GST_RTSP_FILTER_KEEP;
 }
 GstRTSPFilterResult filter_func(GstRTSPSessionPool *pool,
