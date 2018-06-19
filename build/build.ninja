@@ -60,11 +60,11 @@ build PHONY: phony
 
 # Build rules for targets
 
-build pr@exe/rtsp_server.c.o: c_COMPILER ../rtsp_server.c
- DEPFILE = pr@exe/rtsp_server.c.o.d
- ARGS = -Ipr@exe -I. -I.. -I/usr/include/gstreamer-1.0 -I/usr/lib/x86_64-linux-gnu/gstreamer-1.0/include -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -O0 -g -pthread
+build n@exe/rtsp_server.c.o: c_COMPILER ../rtsp_server.c
+ DEPFILE = n@exe/rtsp_server.c.o.d
+ ARGS = -In@exe -I. -I.. -I/usr/include/gstreamer-1.0 -I/usr/lib/x86_64-linux-gnu/gstreamer-1.0/include -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -O0 -g -pthread
 
-build pr: c_LINKER pr@exe/rtsp_server.c.o | /usr/lib/x86_64-linux-gnu/libgstreamer-1.0.so.0.803.0 /usr/lib/x86_64-linux-gnu/libgobject-2.0.a /usr/lib/x86_64-linux-gnu/libgio-2.0.a /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2 /usr/lib/x86_64-linux-gnu/libglib-2.0.a /usr/lib/x86_64-linux-gnu/libgstbase-1.0.so.0.803.0 /usr/lib/x86_64-linux-gnu/libgstrtp-1.0.so.0.803.0 /usr/lib/x86_64-linux-gnu/libgstrtsp-1.0.so.0.803.0 /usr/lib/x86_64-linux-gnu/libgstrtspserver-1.0.so.0.602.0 /usr/lib/x86_64-linux-gnu/libgio-2.0.so.0.4800.2 /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2 /usr/lib/x86_64-linux-gnu/libgstsdp-1.0.so.0.803.0
+build n: c_LINKER n@exe/rtsp_server.c.o | /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0.4800.2 /usr/lib/x86_64-linux-gnu/libgstrtsp-1.0.so.0.803.0 /usr/lib/x86_64-linux-gnu/libgstrtp-1.0.so.0.803.0 /usr/lib/x86_64-linux-gnu/libgio-2.0.a /usr/lib/x86_64-linux-gnu/libgstbase-1.0.so.0.803.0 /usr/lib/x86_64-linux-gnu/libgstrtspserver-1.0.so.0.602.0 /usr/lib/x86_64-linux-gnu/libgstreamer-1.0.so.0.803.0 /lib/x86_64-linux-gnu/libglib-2.0.so.0.4800.2 /usr/lib/x86_64-linux-gnu/libgobject-2.0.a /usr/lib/x86_64-linux-gnu/libgstsdp-1.0.so.0.803.0 /usr/lib/x86_64-linux-gnu/libgio-2.0.so.0.4800.2 /usr/lib/x86_64-linux-gnu/libglib-2.0.a
  LINK_ARGS = -Wl,--no-undefined -Wl,--as-needed -Wl,--start-group -lgstreamer-1.0 -lgobject-2.0 -lglib-2.0 -Wl,--end-group -lgstrtp-1.0 -lgstbase-1.0 -lgstreamer-1.0 -lgobject-2.0 -lglib-2.0 -lgstrtsp-1.0 -lgstreamer-1.0 -lgstsdp-1.0 -lgio-2.0 -lgobject-2.0 -lglib-2.0 -lgstrtspserver-1.0 -lgstbase-1.0 -lgstreamer-1.0 -lgobject-2.0 -lglib-2.0
 
 # Test rules
@@ -113,7 +113,7 @@ build meson-uninstall: CUSTOM_COMMAND PHONY
 
 build uninstall: phony meson-uninstall
 
-build all: phony pr
+build all: phony n
 
 default all
 

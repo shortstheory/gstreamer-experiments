@@ -1,6 +1,7 @@
 #include <gst/gst.h>
 
 #include <gst/rtsp-server/rtsp-server.h>
+#include <unistd.h>
 
 G_BEGIN_DECLS
 
@@ -81,12 +82,37 @@ static GOptionEntry entries[] = {
   {NULL}
 };
 
+
+GstRTSPFilterResult filter_func(GstRTSPSessionPool *pool,
+                                 GstRTSPSession *session,
+                                 gpointer user_data)
+{
+  g_warning("connection!");
+  return GST_RTSP_FILTER_KEEP;
+}
 void
-client_connect_callback (GstRTSPServer *gstrtspserver,
-               GstRTSPClient *arg1,
+client_connect_callback (GstRTSPServer *server,
+               GstRTSPClient *client,
                gpointer       user_data)
 {
-  g_warning("client connected!");
+  guint a = gst_rtsp_session_pool_get_n_sessions((GstRTSPSessionPool*)user_data);
+  // if (pool != NULL) {
+  g_warning("clientnew connected!! %u", a);
+  // } 
+  // GList *session_list = gst_rtsp_session_pool_filter (pool, filter_func,NULL);
+}
+
+static gboolean
+timeout (GstRTSPServer * server)
+{
+  GstRTSPSessionPool *pool;
+  pool = gst_rtsp_server_get_session_pool (server);
+  g_warning("Doing timeout! %d", gst_rtsp_session_pool_get_n_sessions (pool));
+
+  gst_rtsp_session_pool_cleanup (pool);
+  g_object_unref (pool);
+
+  return TRUE;
 }
 
 int
@@ -95,52 +121,37 @@ main (int argc, char *argv[])
   GMainLoop *loop;
   GstRTSPServer *server;
   GstRTSPMountPoints *mounts;
-  TestRTSPMediaFactory *factory;
+  GstRTSPMediaFactory *factory;
   GOptionContext *optctx;
   GError *error = NULL;
-
-  optctx = g_option_context_new ("<launch line> - Test RTSP Server, Launch\n\n"
-      "Example: \"( videotestsrc ! x264enc ! rtph264pay name=pay0 pt=96 )\"");
-  g_option_context_add_main_entries (optctx, entries, NULL);
-  g_option_context_add_group (optctx, gst_init_get_option_group ());
-  if (!g_option_context_parse (optctx, &argc, &argv, &error)) {
-    g_printerr ("Error parsing options: %s\n", error->message);
-    g_option_context_free (optctx);
-    g_clear_error (&error);
-    return -1;
-  }
-  g_option_context_free (optctx);
+  gst_init (&argc, &argv);
 
   loop = g_main_loop_new (NULL, FALSE);
 
   /* create a server instance */
   server = gst_rtsp_server_new ();
-  g_signal_connect(server, "client-connected", G_CALLBACK(client_connect_callback), NULL);
   g_object_set (server, "service", port, NULL);
-  gst_rtsp_server_set_address(server, "172.17.0.2");
+  // gst_rtsp_server_set_address(server, "172.17.0.2");
 
-  /* get the mount points for this server, every server has a default object
-   * that be used to map uri mount points to media factories */
   mounts = gst_rtsp_server_get_mount_points (server);
 
-  /* make a media factory for a test stream. The default media factory can use
-   * gst-launch syntax to create pipelines.
-   * any launch line works as long as it contains elements named pay%d. Each
-   * element with pay%d names will be a stream */
-   factory = g_object_new(TEST_TYPE_RTSP_MEDIA_FACTORY, NULL);
-  // gst_rtsp_media_factory_set_launch (factory, argv[1]);
+  //  factory = g_object_new(TEST_TYPE_RTSP_MEDIA_FACTORY, NULL);
+    factory = gst_rtsp_media_factory_new ();
+  gst_rtsp_media_factory_set_launch (factory, "videotestsrc ! video/x-raw,width=352,height=288,framerate=15/1 ! "
+      "x264enc ! rtph264pay name=pay0 pt=96 ");
 
-  /* attach the test factory to the /test url */
-  gst_rtsp_mount_points_add_factory (mounts, "/test", GST_RTSP_MEDIA_FACTORY(factory));
+  gst_rtsp_mount_points_add_factory (mounts, "/test", factory);
 
-  /* don't need the ref to the mapper anymore */
   g_object_unref (mounts);
 
-  /* attach the server to the default maincontext */
   gst_rtsp_server_attach (server, NULL);
+  g_timeout_add_seconds (2, (GSourceFunc) timeout, server);
+
 
   /* start serving */
-  g_print ("stream ready at rtsp://172.17.0.1:%s/test\n", port);
+  // GstRTSPSessionPool* pool = gst_rtsp_server_get_session_pool(server);
+  g_print ("Stream ready at rtsp://localhost:%s/test\n", port);
+  // g_signal_connect(server, "client-connected", G_CALLBACK(client_connect_callback), pool);
   g_main_loop_run (loop);
 
   return 0;

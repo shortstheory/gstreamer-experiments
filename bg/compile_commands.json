@@ -1,7 +1,0 @@
-[
-  {
-    "directory": "/home/nic/gsoc-2018/gstreamer-experiments/bg",
-    "command": "ccache cc  -Ipr@exe -I. -I.. -I/usr/include/gstreamer-1.0 -I/usr/lib/x86_64-linux-gnu/gstreamer-1.0/include -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -O0 -g -pthread -MMD -MQ 'pr@exe/g.c.o' -MF 'pr@exe/g.c.o.d' -o 'pr@exe/g.c.o' -c ../g.c",
-    "file": "../g.c"
-  }
-]
