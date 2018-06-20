@@ -1,0 +1,7 @@
+[
+  {
+    "directory": "/home/nic/gsoc-2018/gstreamer-experiments/j",
+    "command": "cc -In@exe -I. -I.. -I/usr/include/gstreamer-1.0 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -O0 -g -pthread  -MD -MQ 'n@exe/rtsp_server.c.o' -MF 'n@exe/rtsp_server.c.o.d' -o 'n@exe/rtsp_server.c.o' -c ../rtsp_server.c",
+    "file": "../rtsp_server.c"
+  }
+]
