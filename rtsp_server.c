@@ -1,9 +1,10 @@
 #include <gst/gst.h>
 // #include <gst/rtp/gstrtpbin.h>
+#include <gst/rtp/gstrtcpbuffer.h>
 
 #include <gst/rtsp-server/rtsp-server.h>
 #include <unistd.h>
-
+#include <stdlib.h>
 G_BEGIN_DECLS
 
 #define TEST_TYPE_RTSP_MEDIA_FACTORY (test_rtsp_media_factory_get_type())
@@ -117,10 +118,63 @@ get_port_from_socket (GSocket * socket)
   return port;
 }
 
+void process_rr_pkt(GstRTCPPacket* packet)
+{
+    guint64 rr_time_delta_ms;
+    guint64 curr_time_ms;
+    gfloat bandwidth;
+
+    guint32 exthighestseq, jitter, lsr, dlsr;
+    guint32 packet_interval;
+    guint32 ssrc;
+    gint32 packetslost;
+
+    guint8 fractionlost;
+    gfloat curr_buffer_occ;
+    gfloat curr_rtt;
+
+    gst_rtcp_packet_get_rb(packet, 0, &ssrc, &fractionlost,
+                           &packetslost, &exthighestseq, &jitter, &lsr, &dlsr);
+    g_warning("    ssrc          %llu", ssrc);
+    g_warning("    highest   seq %llu", exthighestseq);
+    g_warning("    jitter        %llu", jitter);
+    g_warning("    fraction lost %llu", fractionlost);
+    g_warning("    packet   lost %llu", packetslost);
+    
+}
+
 GstPadProbeReturn buffer_callback(GstPad *pad,GstPadProbeInfo *info,gpointer user_data)
 {
   g_warning("Got AN RTCP BUFFER BITCH!");
-  
+
+    GstBuffer* buf = GST_PAD_PROBE_INFO_BUFFER(info);
+    if (buf != NULL) {    
+      GstRTCPBuffer *rtcp_buffer = (GstRTCPBuffer*)malloc(sizeof(GstRTCPBuffer));
+      rtcp_buffer->buffer = NULL;
+      gst_rtcp_buffer_map(buf, GST_MAP_READ, rtcp_buffer);
+      GstRTCPPacket *packet = (GstRTCPPacket*)malloc(sizeof(GstRTCPPacket));
+      gst_rtcp_buffer_get_first_packet(rtcp_buffer, packet);
+      process_rr_pkt(packet);
+      
+      GstRTCPType type;
+      type = gst_rtcp_packet_get_type(packet);
+      g_warning("pkt type %d size - %d", type, gst_buffer_get_size(buf));
+      switch (type) {
+      case GST_RTCP_TYPE_RR:
+        g_warning("RR Pckt");
+
+          break;
+      case GST_RTCP_TYPE_SR:
+        g_warning("SR pkt");
+          break;
+      default:
+          break;
+      }
+    free(rtcp_buffer);
+    free(packet);
+    } else {
+      g_warning("kiss my piss :(");    
+    }
 }
 
 GstRTSPFilterResult
