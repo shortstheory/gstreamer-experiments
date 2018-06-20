@@ -1,0 +1,1 @@
+gst-launch-1.0 -v playbin uri=rtsp://localhost:8554/test uridecodebin0::source::latency=300

@@ -1,0 +1,2 @@
+gcc simple-pipeline.c -o ep `pkg-config --cflags --libs gstreamer-1.0`
+
