@@ -29,29 +29,37 @@ int main(int argc, char *argv[]) {
     gst_object_unref (pipeline);
     return -1;
   }
-    GstIterator *it = gst_bin_iterate_elements (GST_BIN (pipeline));
-    GValue item = G_VALUE_INIT;
-    int done = FALSE;
+    GList* list = GST_BIN_CHILDREN(pipeline);
+    GList* l;
     int i = 0;
-    while (!done) {
-        i++;
-    switch (gst_iterator_next (it, &item)) {
-    case GST_ITERATOR_OK:
-        g_value_reset (&item);
-        break;
-    case GST_ITERATOR_RESYNC:
-        gst_iterator_resync (it);
-        break;
-    case GST_ITERATOR_ERROR:
-        done = TRUE;
-        break;
-    case GST_ITERATOR_DONE:
-        done = TRUE;
-        break;
+    for (l = list; l != NULL; l = l->next)
+    {
+        GstElement* e = l->data;
+        g_warning("element name = %s", gst_element_get_name(e));
     }
-    }
-    g_value_unset (&item);
-    gst_iterator_free (it);
+    // GstIterator *it = gst_bin_iterate_elements (GST_BIN (pipeline));
+    // GValue item = G_VALUE_INIT;
+    // int done = FALSE;
+    // int i = 0;
+    // while (!done) {
+    //     i++;
+    // switch (gst_iterator_next (it, &item)) {
+    // case GST_ITERATOR_OK:
+    //     g_value_reset (&item);
+    //     break;
+    // case GST_ITERATOR_RESYNC:
+    //     gst_iterator_resync (it);
+    //     break;
+    // case GST_ITERATOR_ERROR:
+    //     done = TRUE;
+    //     break;
+    // case GST_ITERATOR_DONE:
+    //     done = TRUE;
+    //     break;
+    // }
+    // }
+    // g_value_unset (&item);
+    // gst_iterator_free (it);
     g_warning("ele cnt %d", i);
 
 

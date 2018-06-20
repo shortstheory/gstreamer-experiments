@@ -123,24 +123,40 @@ media_filter (GstRTSPSession *sess,
 {
   g_warning("media!");
   GstRTSPMedia* media = gst_rtsp_session_media_get_media (session_media);
-  g_warning("Media streams - %d", gst_rtsp_media_n_streams (media));
-  GstRTSPStream* stream = gst_rtsp_media_get_stream (media,0);
-  if (stream != NULL) {
-    // g_warning("BABYEEE");
-    GSocket *mysocket1= gst_rtsp_stream_get_rtcp_socket (stream, G_SOCKET_FAMILY_IPV4);
-    GSocket *mysocket2= gst_rtsp_stream_get_rtp_socket (stream, G_SOCKET_FAMILY_IPV4);
-
-    if (mysocket1 != NULL) {
-      guint16 port1 = get_port_from_socket(mysocket1);
-      guint16 port2 = get_port_from_socket(mysocket2);
-      g_object_set(rtcp_udp_src, "port", port1, NULL);
-      g_warning("KNACK22 + %d %d", port1, port2);
-    } else {
-      g_warning("fuck");
+  GstElement* e = gst_rtsp_media_get_element (media);
+    GstElement* parent = (GstElement*)gst_object_get_parent(GST_OBJECT(e));
+  if (parent!=NULL) {
+    g_warning("got parent!");
+    GList* list = GST_BIN_CHILDREN(parent);
+    GList* l;
+    int i = 0;
+    for (l = list; l != NULL; l = l->next)
+    {
+        GstElement* e = l->data;
+        g_warning("element name = %s", gst_element_get_name(e));
     }
   } else {
-    g_warning("Oh dear");
+    g_warning("fuckme");
   }
+
+//   g_warning("Media streams - %d", gst_rtsp_media_n_streams (media));
+//   GstRTSPStream* stream = gst_rtsp_media0_get_stream (media,0);
+//   if (stream != NULL) {
+//     // g_warning("BABYEEE");
+//     GSocket *mysocket1= gst_rtsp_stream_get_rtcp_socket (stream, G_SOCKET_FAMILY_IPV4);
+//     GSocket *mysocket2= gst_rtsp_stream_get_rtp_socket (stream, G_SOCKET_FAMILY_IPV4);
+
+//     if (mysocket1 != NULL) {
+//       guint16 port1 = get_port_from_socket(mysocket1);
+//       guint16 port2 = get_port_from_socket(mysocket2);
+//       g_object_set(rtcp_udp_src, "port", port1, NULL);
+//       g_warning("KNACK22 + %d %d", port1, port2);
+//     } else {
+//       g_warning("fuck");
+//     }
+//   } else {
+//     g_warning("Oh dear");
+//   }
   return GST_RTSP_FILTER_KEEP;
 }
 GstRTSPFilterResult filter_func(GstRTSPSessionPool *pool,
