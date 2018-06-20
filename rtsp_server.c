@@ -1,4 +1,5 @@
 #include <gst/gst.h>
+// #include <gst/rtp/gstrtpbin.h>
 
 #include <gst/rtsp-server/rtsp-server.h>
 #include <unistd.h>
@@ -116,6 +117,12 @@ get_port_from_socket (GSocket * socket)
   return port;
 }
 
+GstPadProbeReturn buffer_callback(GstPad *pad,GstPadProbeInfo *info,gpointer user_data)
+{
+  g_warning("Got AN RTCP BUFFER BITCH!");
+  
+}
+
 GstRTSPFilterResult
 media_filter (GstRTSPSession *sess,
                              GstRTSPSessionMedia *session_media,
@@ -130,11 +137,34 @@ media_filter (GstRTSPSession *sess,
     GList* list = GST_BIN_CHILDREN(parent);
     GList* l;
     int i = 0;
+    GstElement* e;
     for (l = list; l != NULL; l = l->next)
     {
-        GstElement* e = l->data;
-        g_warning("element name = %s", gst_element_get_name(e));
+        e = l->data;
+        char* str = gst_element_get_name(e);
+        g_warning("element name = %s %d", str, i++);
+        if (i == 19) {
+          break;
+        }
+        // if ()
     }
+    g_warning("rtpbinelement name = %s\n", gst_element_get_name(e));
+    GList* pads = GST_ELEMENT_PADS(e);
+    GstPad* p;
+    i = 0;
+     for (l = pads; l != NULL; l = l->next)
+    {
+        p = l->data;
+        char* str = gst_pad_get_name(p);
+        g_warning("rtpbinpad name = %s %d", str, i);
+        if (i == 4){
+          break;
+        }
+        i++;
+        // if ()
+    }
+
+    gst_pad_add_probe (p,GST_PAD_PROBE_TYPE_BUFFER,G_CALLBACK(buffer_callback),NULL, NULL);
   } else {
     g_warning("fuckme");
   }
