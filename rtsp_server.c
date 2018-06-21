@@ -60,7 +60,7 @@ custom_create_element (GstRTSPMediaFactory * factory, const GstRTSPUrl  *url)
      g_warning("CUsom\n");
      g_print("query is: %s\n", url->query);
      /* according to query create GstElement, for example: */
-    source = gst_element_factory_make ("videotestsrc", "source");
+    source = gst_element_factory_make ("v4l2src", "source");
     enc = gst_element_factory_make("x264enc", "enc");
     h264p = gst_element_factory_make("h264parse", "h264p");
     rtph264 = gst_element_factory_make("rtph264pay", "pay0");
@@ -283,6 +283,7 @@ main (int argc, char *argv[])
   GstRTSPServer *server;
   GstRTSPMountPoints *mounts;
   TestRTSPMediaFactory *factory;
+  GstRTSPMediaFactory* my_factory;
   GOptionContext *optctx;
   GError *error = NULL;
   gst_init (&argc, &argv);
@@ -296,12 +297,16 @@ main (int argc, char *argv[])
 
   mounts = gst_rtsp_server_get_mount_points (server);
 
-   factory = g_object_new(TEST_TYPE_RTSP_MEDIA_FACTORY, NULL);
+
+  my_factory = gst_rtsp_media_factory_new ();
+  GST_RTSP_MEDIA_FACTORY_GET_CLASS(my_factory)->create_element = custom_create_element;
+  //  factory = g_object_new(TEST_TYPE_RTSP_MEDIA_FACTORY, NULL);
+   
     // factory = gst_rtsp_media_factory_new ();
   // gst_rtsp_media_factory_set_launch (factory, "videotestsrc ! video/x-raw,width=352,height=288,framerate=15/1 ! "
   //     "x264enc ! rtph264pay name=pay0 pt=96 ");
- gst_rtsp_mount_points_add_factory (mounts, "/test", GST_RTSP_MEDIA_FACTORY(factory));
-  // gst_rtsp_mount_points_add_factory (mounts, "/test", factory);
+//  gst_rtsp_mount_points_add_factory (mounts, "/test", GST_RTSP_MEDIA_FACTORY(factory));
+  gst_rtsp_mount_points_add_factory (mounts, "/test", my_factory);
 
   g_object_unref (mounts);
 
@@ -311,7 +316,7 @@ main (int argc, char *argv[])
 
   /* start serving */
   // GstRTSPSessionPool* pool = gst_rtsp_server_get_session_pool(server);
-  g_print ("custom Stream ready at rtsp://localhost:%s/test\n", port);
+  g_print ("custom Stream ready at rtsp://172.17.0.2:%s/test\n", port);
   // g_signal_connect(server, "client-connected", G_CALLBACK(client_connect_callback), pool);
   g_main_loop_run (loop);
 
