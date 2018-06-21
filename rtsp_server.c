@@ -56,9 +56,11 @@ GstElement *pipeline, *source, *enc, *h264p, *rtph264, *identity, *identity2, *r
 static GstElement *
 custom_create_element (GstRTSPMediaFactory * factory, const GstRTSPUrl  *url)
 {
+      int* a = GST_RTSP_MEDIA_FACTORY_GET_CLASS(factory)->_gst_reserved[0];
      /* you can see at query string: */
      g_warning("CUsom\n");
      g_print("query is: %s\n", url->query);
+     g_warning("DOING WORK %d", *a);
      /* according to query create GstElement, for example: */
     source = gst_element_factory_make ("v4l2src", "source");
     enc = gst_element_factory_make("x264enc", "enc");
@@ -270,7 +272,7 @@ timeout (GstRTSPServer * server)
     GstRTSPSessionPool *pool;
 
   pool = gst_rtsp_server_get_session_pool (server);
-  g_warning("Doing timeout! %d", gst_rtsp_session_pool_get_n_sessions (pool));
+  // g_warning("Doing timeout! %d", gst_rtsp_session_pool_get_n_sessions (pool));
   GList *session_list = gst_rtsp_session_pool_filter (pool, filter_func, NULL);
 
   return TRUE;
@@ -299,7 +301,9 @@ main (int argc, char *argv[])
 
 
   my_factory = gst_rtsp_media_factory_new ();
+  int a = 13;
   GST_RTSP_MEDIA_FACTORY_GET_CLASS(my_factory)->create_element = custom_create_element;
+  GST_RTSP_MEDIA_FACTORY_GET_CLASS(my_factory)->_gst_reserved[0] = &a;
   //  factory = g_object_new(TEST_TYPE_RTSP_MEDIA_FACTORY, NULL);
    
     // factory = gst_rtsp_media_factory_new ();
