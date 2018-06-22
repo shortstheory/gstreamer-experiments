@@ -284,7 +284,7 @@ main (int argc, char *argv[])
   GMainLoop *loop;
   GstRTSPServer *server;
   GstRTSPMountPoints *mounts;
-  TestRTSPMediaFactory *factory;
+  GstRTSPMediaFactory *factory;
   GstRTSPMediaFactory* my_factory;
   GOptionContext *optctx;
   GError *error = NULL;
@@ -300,16 +300,20 @@ main (int argc, char *argv[])
   mounts = gst_rtsp_server_get_mount_points (server);
 
 
-  my_factory = gst_rtsp_media_factory_new ();
   int a = 13;
-  GST_RTSP_MEDIA_FACTORY_GET_CLASS(my_factory)->create_element = custom_create_element;
+  my_factory = gst_rtsp_media_factory_new ();
+  gst_rtsp_media_factory_set_shared (my_factory, TRUE);
+  // GST_RTSP_MEDIA_FACTORY_GET_CLASS(my_factory)->create_element = custom_create_element;
   GST_RTSP_MEDIA_FACTORY_GET_CLASS(my_factory)->_gst_reserved[0] = &a;
   //  factory = g_object_new(TEST_TYPE_RTSP_MEDIA_FACTORY, NULL);
    
-    // factory = gst_rtsp_media_factory_new ();
-  // gst_rtsp_media_factory_set_launch (factory, "videotestsrc ! video/x-raw,width=352,height=288,framerate=15/1 ! "
-  //     "x264enc ! rtph264pay name=pay0 pt=96 ");
-//  gst_rtsp_mount_points_add_factory (mounts, "/test", GST_RTSP_MEDIA_FACTORY(factory));
+    factory = gst_rtsp_media_factory_new ();
+  gst_rtsp_media_factory_set_launch (factory, "v4l2src device=/dev/video1 ! video/x-raw,width=320,height=240,framerate=15/1 ! "
+      "x264enc ! rtph264pay name=pay0 pt=96 ");
+  gst_rtsp_media_factory_set_launch (my_factory, "v4l2src ! video/x-raw,width=320,height=240,framerate=15/1 ! "
+      "x264enc ! rtph264pay name=pay0 pt=96 ");
+
+ gst_rtsp_mount_points_add_factory (mounts, "/webtest", GST_RTSP_MEDIA_FACTORY(factory));
   gst_rtsp_mount_points_add_factory (mounts, "/test", my_factory);
 
   g_object_unref (mounts);
